@@ -1,0 +1,14 @@
+{
+  "sections": {
+    "product-carousel": {
+      "type": "product-carousel",
+      "settings": {
+        "collection": "test-collection",
+        "products_to_show": 20
+      }
+    }
+  },
+  "order": [
+    "product-carousel"
+  ]
+}

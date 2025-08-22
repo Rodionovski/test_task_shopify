@@ -1,0 +1,274 @@
+{% assign collection = collections[section.settings.collection] %}
+{% if collection and collection.products.size > 0 %}
+<div class="carousel-wrapper">
+  <div class="product-carousel">
+    {% for product in collection.products %}
+      <div class="carousel-item">
+        <a href="{{ product.url }}">
+          {% if product.featured_image %}
+          <img src="{{ product.featured_image | img_url: 'medium' }}" alt="{{ product.title }}">
+          {% else %}
+          <img src="https://via.placeholder.com/250x250" alt="{{ product.title }}">
+          {% endif %}
+        </a>
+        <div class="product-info">
+          <h3>{{ product.title }}</h3>
+          <p>{{ product.price | money }}</p>
+          <button class="add-to-cart-btn" data-product-handle="{{ product.handle }}">
+            Add to Cart
+          </button>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+  <button class="carousel-btn prevBtn">‹</button>
+  <button class="carousel-btn nextBtn">›</button>
+</div>
+
+<style>
+.carousel-wrapper {
+  position: relative;
+  padding: 20px 0;
+}
+.product-carousel {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  padding-bottom: 20px;
+  mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+  flex-wrap: nowrap;
+}
+.product-carousel::-webkit-scrollbar {
+  display: none;
+}
+.carousel-item {
+  flex: 0 0 250px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.carousel-item img {
+  width: 100%;
+  height: 250px;
+  object-fit: contain;
+  margin-bottom: 10px;
+}
+.product-info {
+  margin-top: auto;
+}
+.add-to-cart-btn {
+  width: 80%;
+  padding: 10px;
+  margin: 10px 0 0;
+  border: none;
+  border-radius: 5px;
+  background-color: #333;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.add-to-cart-btn:hover {
+  background-color: #555;
+}
+.carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #333;
+  color: #fff;
+  font-size: 24px;
+  border: none;
+  cursor: pointer;
+  z-index: 10;
+  transition: background 0.3s;
+}
+.carousel-btn:hover {
+  background-color: #555;
+}
+.prevBtn { left: 10px; }
+.nextBtn { right: 10px; }
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  justify-content: center;
+  align-items: center;
+}
+.modal-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 400px;
+  width: 90%;
+}
+.close-modal {
+  float: right;
+  font-size: 22px;
+  cursor: pointer;
+}
+.toast {
+  position: fixed;
+  left: 50%;
+  top: 16px;
+  transform: translateX(-50%);
+  min-width: 220px;
+  max-width: 90vw;
+  padding: 12px 16px;
+  background: #333;
+  color: #fff;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.2;
+  z-index: 9999;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .35s ease, top .35s ease;
+}
+.toast.show {
+  opacity: 1;
+  top: 40px;
+  pointer-events: auto;
+}
+.modal-content select,
+.modal-content input,
+.modal-content button {
+  width: 100%;
+  margin: 6px 0;
+  padding: 8px;
+}
+
+  @media (max-width: 1024px) {
+    .product-card {
+      width: 200px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .product-card {
+      width: 160px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .product-carousel {
+      gap: 8px;
+    }
+    .product-card {
+      width: 140px;
+      padding: 8px;
+    }
+    .product-card h3 {
+      font-size: 14px;
+    }
+    .product-card p {
+      font-size: 12px;
+    }
+    .product-card button {
+      padding: 6px 10px;
+      font-size: 13px;
+    }
+  }
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const carousel = document.querySelector(".product-carousel");
+  const prevBtn = document.querySelector(".prevBtn");
+  const nextBtn = document.querySelector(".nextBtn");
+  prevBtn.addEventListener("click", () => {
+    carousel.scrollBy({ left: -300, behavior: "smooth" });
+  });
+  nextBtn.addEventListener("click", () => {
+    carousel.scrollBy({ left: 300, behavior: "smooth" });
+  });
+  const addToCartButtons = document.querySelectorAll(".add-to-cart-btn");
+  const modal = document.createElement("div");
+  modal.className = "modal";
+  document.body.appendChild(modal);
+  const modalContent = document.createElement("div");
+  modalContent.className = "modal-content";
+  modal.appendChild(modalContent);
+  addToCartButtons.forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const productHandle = btn.dataset.productHandle;
+      const response = await fetch(`/products/${productHandle}.js`);
+      const productData = await response.json();
+      modalContent.innerHTML = `
+        <span class="close-modal">&times;</span>
+        <img src="${productData.images[0]}" alt="${productData.title}" style="width:100%; margin-bottom:12px; object-fit:contain; border-radius:6px;">
+        <label for="product-size">Size</label>
+        <select id="product-size">
+          <option selected>Select Size</option>
+          ${productData.variants.map(v => `<option value="${v.options[0]}">${v.options[0]}</option>`).join('')}
+        </select>
+        <label for="product-color">Color</label>
+        <select id="product-color">
+          <option selected>Select Color</option>
+          ${productData.variants.map(v => `<option value="${v.options[1]}">${v.options[1]}</option>`).join('')}
+        </select>
+        <label for="product-quantity">Quantity</label>
+        <input type="number" id="product-quantity" value="1" min="1" max="10">
+        <button id="modal-add-to-cart">Add to Cart</button>
+      `;
+      modal.style.display = "flex";
+      const closeModal = modalContent.querySelector(".close-modal");
+      closeModal.addEventListener("click", () => modal.style.display = "none");
+      const sizeSelect = modalContent.querySelector("#product-size");
+      const colorSelect = modalContent.querySelector("#product-color");
+      const addModalBtn = modalContent.querySelector("#modal-add-to-cart");
+      addModalBtn.addEventListener("click", async () => {
+        const variant = productData.variants.find(
+          v => v.options[0] === sizeSelect.value && v.options[1] === colorSelect.value
+        ) || productData.variants[0];
+        const quantity = parseInt(modalContent.querySelector("#product-quantity").value, 10);
+        await fetch('/cart/add.js', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: variant.id, quantity })
+        });
+        modal.style.display = "none";
+      });
+    });
+  });
+});
+</script>
+
+{% else %}
+<p>No products found in this collection.</p>
+{% endif %}
+
+{% schema %}
+{
+  "name": "Product Carousel",
+  "settings": [
+    {
+      "type": "collection",
+      "id": "collection",
+      "label": "Select collection"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Product Carousel"
+    }
+  ]
+}
+{% endschema %}
